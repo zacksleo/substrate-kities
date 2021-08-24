@@ -83,3 +83,74 @@ fn breed_fail_with_count_overflow() {
 		assert_noop!(Kitties::breed(Origin::signed(1), 1, 2), Error::<Test>::KittiesCountOverflow);
 	});
 }
+
+#[test]
+fn sell_fail_with_not_owner() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			Kitties::sell(Origin::signed(1), 1, Some(100)),
+			Error::<Test>::NotOwnerOfKitty
+		);
+	});
+}
+
+#[test]
+fn sell_success() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		assert_ok!(Kitties::sell(Origin::signed(1), 1, Some(100)));
+		System::assert_has_event(TestEvent::Kitties(Event::KittyForSale(1, 1, Some(100))));
+	});
+}
+
+#[test]
+fn cancel_sell_test() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		let _ = Kitties::sell(Origin::signed(1), 1, Some(100));
+
+		assert_ok!(Kitties::sell(Origin::signed(1), 1, None));
+
+		assert_eq!(None, KittiesPrice::<Test>::get(1));
+	});
+}
+
+#[test]
+fn buy_failed_when_already_owned() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		assert_noop!(Kitties::buy(Origin::signed(1), 1), Error::<Test>::KittyAlreadyOwned);
+	});
+}
+
+#[test]
+fn buy_failed_when_not_for_sale() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		assert_noop!(Kitties::buy(Origin::signed(2), 1), Error::<Test>::NotForSale);
+	});
+}
+
+#[test]
+fn buy_failed_not_enough_balance() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		let _ = Kitties::sell(Origin::signed(1), 1, Some(100));
+
+		assert_noop!(Kitties::buy(Origin::signed(3), 1), Error::<Test>::NotEnoughBalance);
+	});
+}
+
+#[test]
+fn buy_success() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		let _ = Kitties::sell(Origin::signed(1), 1, Some(100));
+
+		assert_ok!(Kitties::buy(Origin::signed(2), 1));
+
+		assert_eq!(KittiesPrice::<Test>::contains_key(1), false);
+
+		System::assert_has_event(TestEvent::Kitties(Event::KittyTransfered(1, 2, 1)));
+	});
+}

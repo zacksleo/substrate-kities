@@ -28,7 +28,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 	pub const ExistentialDeposit: u64 = 1;
-	pub const ReserveOfNewCreate: u32 = 1;
+	pub const ReserveOfNewCreate: u32 = 1_000_000_000;
 }
 
 impl system::Config for Test {
@@ -81,7 +81,15 @@ impl pallet_kitty::Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+	// 初始化余额
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(1, 10_000_000_000), (2, 10_000_000_000), (3, 900_000_000)],
+	}
+	.assimilate_storage(&mut storage)
+	.unwrap();
+
 	let mut ext = sp_io::TestExternalities::new(storage);
 	// Events are not emitted on block 0 -> advance to block 1.
 	// Any dispatchable calls made during genesis block will have no events emitted.
