@@ -15,7 +15,11 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::{Currency, Randomness, ReservableCurrency}};
+	use frame_support::{
+		dispatch::DispatchResult,
+		pallet_prelude::*,
+		traits::{Currency, Randomness, ReservableCurrency},
+	};
 	use frame_system::pallet_prelude::*;
 	use sp_io::hashing::blake2_128;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, Bounded};
@@ -23,7 +27,8 @@ pub mod pallet {
 	#[derive(Encode, Decode)]
 	pub struct Kitty(pub [u8; 16]);
 
-	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	type BalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -48,10 +53,17 @@ pub mod pallet {
 	#[pallet::getter(fn kitties_count)]
 	pub type KittiesCount<T: Config> = StorageValue<_, T::KittyIndex>;
 
+	/// Kitties 价格表
+	#[pallet::storage]
+	#[pallet::getter(fn kitties_price)]
+	pub type KittiesPrice<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::KittyIndex, Option<BalanceOf<T>>, ValueQuery>;
+
 	/// Kitties
 	#[pallet::storage]
 	#[pallet::getter(fn kitties)]
-	pub type Kitties<T: Config> = StorageMap<_, Blake2_128Concat, T::KittyIndex, Option<Kitty>, ValueQuery>;
+	pub type Kitties<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::KittyIndex, Option<Kitty>, ValueQuery>;
 
 	/// Kitties 的主人
 	#[pallet::storage]
@@ -63,8 +75,12 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// 创建成功
 		KittyCreated(T::AccountId, T::KittyIndex),
+		/// 转让成功
 		KittyTransfered(T::AccountId, T::AccountId, T::KittyIndex),
+		/// 发起出售
+		KittyForSale(T::AccountId, T::KittyIndex, Option<BalanceOf<T>>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -78,11 +94,16 @@ pub mod pallet {
 		NotOwnerOfKitty,
 		/// 父母的编号不能相同
 		SameParentIndex,
+		/// Kitty 暂未出售
+		NotForSale,
+		/// 余额不足
+		NotEnoughBalance,
+		/// 已经拥有 Kitty
+		KittyAlreadyOwned,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// 创建 Kitty
 		#[pallet::weight(0)]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
@@ -119,13 +140,12 @@ pub mod pallet {
 			let owner = Owner::<T>::get(&kitty_id).unwrap();
 			ensure!(owner == sender, Error::<T>::NotOwnerOfKitty);
 
-			Owner::<T>::insert(kitty_id, Some(to.clone()));
-
-			Self::deposit_event(Event::KittyTransfered(sender, to, kitty_id));
+			Self::transfer_kitty(sender, to, kitty_id);
 			Ok(())
 		}
 
 		/// 生产 Kitty
+		/// 父母的编号不能相同
 		#[pallet::weight(0)]
 		pub fn breed(
 			origin: OriginFor<T>,
@@ -144,7 +164,6 @@ pub mod pallet {
 
 			let kitty1 = Self::kitties(kitty_id_1).ok_or(Error::<T>::InvalidKittyIndex)?;
 			let kitty2 = Self::kitties(kitty_id_2).ok_or(Error::<T>::InvalidKittyIndex)?;
-
 
 			let kitty_id = match Self::kitties_count() {
 				Some(id) => {
@@ -172,18 +191,72 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// 出售 Kitty
+		/// price 为 None 时, 表示取消出售
+		#[pallet::weight(0)]
+		pub fn sell(
+			origin: OriginFor<T>,
+			kitty_id: T::KittyIndex,
+			price: Option<BalanceOf<T>>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			ensure!(Some(who.clone()) == Self::owner(kitty_id), Error::<T>::NotOwnerOfKitty);
+
+			KittiesPrice::<T>::mutate_exists(kitty_id, |p| *p = Some(price));
+
+			Self::deposit_event(Event::KittyForSale(who, kitty_id, price));
+
+			Ok(())
+		}
+
+		/// 购买 Kitty
+		#[pallet::weight(0)]
+		pub fn buy(origin: OriginFor<T>, kitty_id: T::KittyIndex) -> DispatchResult {
+			let buyer = ensure_signed(origin)?;
+
+			let owner = Self::owner(kitty_id).unwrap();
+			ensure!(owner != buyer.clone(), Error::<T>::KittyAlreadyOwned);
+
+			let price = Self::kitties_price(kitty_id).ok_or(Error::<T>::NotForSale)?;
+
+			let reserve = T::ReserveOfNewCreate::get();
+
+			// 扣除质押金额
+			T::Currency::reserve(&buyer, reserve).map_err(|_| Error::<T>::NotEnoughBalance)?;
+
+			// 出售方解除质押
+			T::Currency::unreserve(&owner, reserve);
+
+			// 转账
+			T::Currency::transfer(
+				&buyer,
+				&owner,
+				price,
+				frame_support::traits::ExistenceRequirement::KeepAlive,
+			)?;
+
+			// 出售下架
+			KittiesPrice::<T>::remove(kitty_id);
+
+			Self::transfer_kitty(owner, buyer, kitty_id);
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
-
 		/// 随机数生成
 		fn random_value(who: &T::AccountId) -> [u8; 16] {
-			let payload = (
-				T::Randomness::random_seed(),
-				&who,
-				<frame_system::Pallet<T>>::extrinsic_index(),
-			);
+			let payload =
+				(T::Randomness::random_seed(), &who, <frame_system::Pallet<T>>::extrinsic_index());
 			payload.using_encoded(blake2_128)
+		}
+
+		/// 转移 Kitty
+		fn transfer_kitty(from: T::AccountId, to: T::AccountId, kitty_id: T::KittyIndex) {
+			Owner::<T>::insert(kitty_id, Some(to.clone()));
+			Self::deposit_event(Event::KittyTransfered(from, to, kitty_id));
 		}
 	}
 }

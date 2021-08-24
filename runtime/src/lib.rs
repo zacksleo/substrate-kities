@@ -252,6 +252,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
+	pub const ReserveOfNewCreate: u32 = 1_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -275,6 +276,8 @@ impl pallet_kitties::Config for Runtime {
 	type Event = Event;
 	type Randomness = RandomnessCollectiveFlip;
 	type KittyIndex = u32;
+	type ReserveOfNewCreate = ReserveOfNewCreate;
+	type Currency = Balances;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
