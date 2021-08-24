@@ -1,4 +1,7 @@
 //! # Kitties Pallet
+//! Kitties Pallet 模块实现了一个简单的加密猫交易功能
+//! 允许创建，转让和买卖
+
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
