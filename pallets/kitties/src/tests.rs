@@ -20,6 +20,13 @@ fn create_test() {
 }
 
 #[test]
+fn create_with_not_enough_balance(){
+	new_test_ext().execute_with(|| {
+		assert_noop!(Kitties::create(Origin::signed(3)), Error::<Test>::NotEnoughBalance);
+	});
+}
+
+#[test]
 fn transfer_test() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Kitties::create(Origin::signed(1)));

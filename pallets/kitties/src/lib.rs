@@ -117,6 +117,9 @@ pub mod pallet {
 				None => 1u32.into(),
 			};
 
+			// 扣除质押金额
+			T::Currency::reserve(&who, T::ReserveOfNewCreate::get()).map_err(|_| Error::<T>::NotEnoughBalance)?;
+
 			let dna = Self::random_value(&who);
 
 			Kitties::<T>::insert(kitty_id, Some(Kitty(dna)));
