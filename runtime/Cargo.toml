@@ -17,9 +17,9 @@ default-features = false
 path = '../pallets/template'
 version = '3.0.0-monthly-2021-08'
 
-[dependencies.pallet-kities]
+[dependencies.pallet-kitties]
 default-features = false
-path = '../pallets/kities'
+path = '../pallets/kitties'
 version = '3.0.0-monthly-2021-08'
 
 [build-dependencies.substrate-wasm-builder]

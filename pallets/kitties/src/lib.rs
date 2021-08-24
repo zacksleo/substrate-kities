@@ -1,8 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://substrate.dev/docs/en/knowledgebase/runtime/frame>
 pub use pallet::*;
 
 #[cfg(test)]
@@ -38,7 +35,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn kitties_count)]
-	pub type KitiesCount<T: Config> = StorageValue<_, T::KittyIndex>;
+	pub type KittiesCount<T: Config> = StorageValue<_, T::KittyIndex>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn kitties)]
@@ -60,7 +57,7 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		KitiesCountOverflow,
+		KittiesCountOverflow,
 		InvalidKittyIndex,
 		NotOwnerOfKitty,
 		SameParentIndex,
@@ -74,7 +71,7 @@ pub mod pallet {
 
 			let kitty_id = match Self::kitties_count() {
 				Some(id) => {
-					ensure!(id != T::KittyIndex::max_value(), Error::<T>::KitiesCountOverflow);
+					ensure!(id != T::KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
 					id
 				}
 				None => 1u32.into(),
@@ -84,7 +81,7 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, Some(Kitty(dna)));
 			Owner::<T>::insert(kitty_id, Some(&who));
-			KitiesCount::<T>::put(kitty_id + 1u32.into());
+			KittiesCount::<T>::put(kitty_id + 1u32.into());
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id));
 
@@ -123,7 +120,7 @@ pub mod pallet {
 
 			let kitty_id = match Self::kitties_count() {
 				Some(id) => {
-					ensure!(id != T::KittyIndex::max_value(), Error::<T>::KitiesCountOverflow);
+					ensure!(id != T::KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
 					id
 				}
 				None => 1u32.into(),
@@ -141,7 +138,7 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, Some(Kitty(new_dna)));
 			Owner::<T>::insert(kitty_id, Some(&who));
-			KitiesCount::<T>::put(kitty_id + 1u32.into());
+			KittiesCount::<T>::put(kitty_id + 1u32.into());
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id));
 

@@ -3679,7 +3679,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
- "pallet-kities",
+ "pallet-kitties",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-template",
@@ -3920,12 +3920,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-kities"
+name = "pallet-kitties"
 version = "3.0.0-monthly-2021-08"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-randomness-collective-flip",
  "parity-scale-codec",
  "serde",
  "sp-core",
