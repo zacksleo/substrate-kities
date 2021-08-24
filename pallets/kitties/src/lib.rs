@@ -115,8 +115,15 @@ pub mod pallet {
 
 			ensure!(kitty_id_1 != kitty_id_2, Error::<T>::SameParentIndex);
 
+			let owner1 = Self::owner(kitty_id_1).ok_or(Error::<T>::InvalidKittyIndex)?;
+			let owner2 = Self::owner(kitty_id_2).ok_or(Error::<T>::InvalidKittyIndex)?;
+
+			ensure!(owner1 == who, Error::<T>::NotOwnerOfKitty);
+			ensure!(owner2 == who, Error::<T>::NotOwnerOfKitty);
+
 			let kitty1 = Self::kitties(kitty_id_1).ok_or(Error::<T>::InvalidKittyIndex)?;
 			let kitty2 = Self::kitties(kitty_id_2).ok_or(Error::<T>::InvalidKittyIndex)?;
+
 
 			let kitty_id = match Self::kitties_count() {
 				Some(id) => {
