@@ -17,6 +17,7 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Kitties: pallet_kitty::{Pallet, Call, Storage, Event<T>},
@@ -27,6 +28,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 	pub const ExistentialDeposit: u64 = 1;
+	pub const ReserveOfNewCreate: u32 = 1;
 }
 
 impl system::Config for Test {
@@ -47,7 +49,7 @@ impl system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -55,6 +57,17 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
+impl pallet_balances::Config for Test {
+	type Balance = u64;
+	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type WeightInfo = ();
+}
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
@@ -62,6 +75,8 @@ impl pallet_kitty::Config for Test {
 	type Event = Event;
 	type Randomness = RandomnessCollectiveFlip;
 	type KittyIndex = u32;
+	type ReserveOfNewCreate = ReserveOfNewCreate;
+	type Currency = Balances;
 }
 
 // Build genesis storage according to the mock runtime.

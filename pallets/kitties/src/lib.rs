@@ -1,3 +1,5 @@
+//! # Kitties Pallet
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
@@ -13,7 +15,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Randomness};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::{Currency, Randomness, ReservableCurrency}};
 	use frame_system::pallet_prelude::*;
 	use sp_io::hashing::blake2_128;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, Bounded};
@@ -21,26 +23,37 @@ pub mod pallet {
 	#[derive(Encode, Decode)]
 	pub struct Kitty(pub [u8; 16]);
 
+	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Because this pallet emits events, it depends on the runtime's definition of an event.
+		// 事件
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// 随机数模块
 		type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
+		/// Kitty 编号
 		type KittyIndex: Parameter + AtLeast32BitUnsigned + Default + Copy + Bounded;
+		/// 创建 Kitty 时需要质押的金额
+		type ReserveOfNewCreate: Get<BalanceOf<Self>>;
+		/// 余额模块
+		type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
 	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
+	/// Kitties 总数
 	#[pallet::storage]
 	#[pallet::getter(fn kitties_count)]
 	pub type KittiesCount<T: Config> = StorageValue<_, T::KittyIndex>;
 
+	/// Kitties
 	#[pallet::storage]
 	#[pallet::getter(fn kitties)]
 	pub type Kitties<T: Config> = StorageMap<_, Blake2_128Concat, T::KittyIndex, Option<Kitty>, ValueQuery>;
 
+	/// Kitties 的主人
 	#[pallet::storage]
 	#[pallet::getter(fn owner)]
 	pub type Owner<T: Config> =
@@ -57,14 +70,20 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Kitties 数量达到上限
 		KittiesCountOverflow,
+		/// Kitty 编号不存在
 		InvalidKittyIndex,
+		/// 当前用户不是 Kitty 的主人
 		NotOwnerOfKitty,
+		/// 父母的编号不能相同
 		SameParentIndex,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		/// 创建 Kitty
 		#[pallet::weight(0)]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -88,6 +107,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// 转让 Kitty
 		#[pallet::weight(0)]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -105,6 +125,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// 生产 Kitty
 		#[pallet::weight(0)]
 		pub fn breed(
 			origin: OriginFor<T>,
@@ -154,6 +175,8 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+
+		/// 随机数生成
 		fn random_value(who: &T::AccountId) -> [u8; 16] {
 			let payload = (
 				T::Randomness::random_seed(),
