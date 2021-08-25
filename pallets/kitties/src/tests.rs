@@ -21,7 +21,16 @@ fn create_test() {
 }
 
 #[test]
-fn create_with_not_enough_balance(){
+fn create_with_id_max_value() {
+	new_test_ext().execute_with(|| {
+		KittiesCount::<Test>::put(u32::max_value() - 1);
+		assert_ok!(Kitties::create(Origin::signed(1)));
+		assert_eq!(KittiesCount::<Test>::get(), Some(u32::max_value()));
+	});
+}
+
+#[test]
+fn create_with_not_enough_balance() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(Kitties::create(Origin::signed(3)), Error::<Test>::NotEnoughBalance);
 	});
