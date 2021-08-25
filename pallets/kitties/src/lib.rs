@@ -104,6 +104,8 @@ pub mod pallet {
 		NotEnoughBalance,
 		/// 已经拥有 Kitty
 		KittyAlreadyOwned,
+		/// 相同的拥有者
+		SameOwner,
 	}
 
 	#[pallet::call]
@@ -144,6 +146,8 @@ pub mod pallet {
 			kitty_id: T::KittyIndex,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
+
+			ensure!(sender != to, Error::<T>::SameOwner);
 
 			let owner = Owner::<T>::get(&kitty_id).unwrap();
 			ensure!(owner == sender, Error::<T>::NotOwnerOfKitty);

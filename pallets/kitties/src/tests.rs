@@ -46,6 +46,14 @@ fn transfer_test() {
 }
 
 #[test]
+fn transfer_failed_to_some_owner() {
+	new_test_ext().execute_with(|| {
+		let _ = Kitties::create(Origin::signed(1));
+		assert_noop!(Kitties::transfer(Origin::signed(1), 1, 1), Error::<Test>::SameOwner);
+	});
+}
+
+#[test]
 fn transfer_not_owner_test() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Kitties::create(Origin::signed(1)));
