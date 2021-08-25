@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_kitties"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_kitties/pallet/trait.Config.html\" title=\"trait pallet_kitties::pallet::Config\">Config</a>&gt; GetCallName for <a class=\"enum\" href=\"pallet_kitties/pallet/enum.Call.html\" title=\"enum pallet_kitties::pallet::Call\">Call</a>&lt;T&gt;","synthetic":false,"types":["pallet_kitties::pallet::Call"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
