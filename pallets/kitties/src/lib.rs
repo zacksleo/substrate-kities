@@ -115,7 +115,7 @@ pub mod pallet {
 			let kitty_id = match Self::kitties_count() {
 				Some(id) => {
 					ensure!(id != T::KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
-					id
+					id + 1u32.into()
 				}
 				None => 1u32.into(),
 			};
@@ -127,7 +127,7 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, Some(Kitty(dna)));
 			Owner::<T>::insert(kitty_id, Some(&who));
-			KittiesCount::<T>::put(kitty_id + 1u32.into());
+			KittiesCount::<T>::put(kitty_id);
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id));
 
@@ -174,7 +174,7 @@ pub mod pallet {
 			let kitty_id = match Self::kitties_count() {
 				Some(id) => {
 					ensure!(id != T::KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
-					id
+					id + 1u32.into()
 				}
 				None => 1u32.into(),
 			};
@@ -191,7 +191,7 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, Some(Kitty(new_dna)));
 			Owner::<T>::insert(kitty_id, Some(&who));
-			KittiesCount::<T>::put(kitty_id + 1u32.into());
+			KittiesCount::<T>::put(kitty_id);
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id));
 

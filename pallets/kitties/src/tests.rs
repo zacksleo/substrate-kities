@@ -15,6 +15,7 @@ fn create_max_count_overflow_test() {
 fn create_test() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Kitties::create(Origin::signed(1)));
+		assert_eq!(KittiesCount::<Test>::get(), Some(1));
 		System::assert_has_event(TestEvent::Kitties(Event::KittyCreated(1, 1)));
 	});
 }
@@ -51,6 +52,7 @@ fn breed_test() {
 		let _ = Kitties::create(Origin::signed(1));
 
 		assert_ok!(Kitties::breed(Origin::signed(1), 1, 2));
+		assert_eq!(KittiesCount::<Test>::get(), Some(3));
 		System::assert_has_event(TestEvent::Kitties(Event::KittyCreated(1, 3)));
 	});
 }
