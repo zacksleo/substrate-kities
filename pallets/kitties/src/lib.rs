@@ -77,13 +77,13 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// 创建成功
+		/// 创建成功 [account, kitty_id]
 		KittyCreated(T::AccountId, T::KittyIndex),
-		/// 转让成功
+		/// 转让成功 [who, receiver, kitty_id]
 		KittyTransfered(T::AccountId, T::AccountId, T::KittyIndex),
-		/// 发起出售
+		/// 发起出售 [who, kitty_id, price]
 		KittyForSale(T::AccountId, T::KittyIndex, Option<BalanceOf<T>>),
-		/// 取消出售
+		/// 取消出售 [account, kitty_id]
 		KittyCancelSale(T::AccountId, T::KittyIndex),
 	}
 
