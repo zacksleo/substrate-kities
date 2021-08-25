@@ -2,7 +2,6 @@
 //! Kitties Pallet 模块实现了一个简单的加密猫交易功能
 //! 允许创建，转让和买卖
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
@@ -84,6 +83,8 @@ pub mod pallet {
 		KittyTransfered(T::AccountId, T::AccountId, T::KittyIndex),
 		/// 发起出售
 		KittyForSale(T::AccountId, T::KittyIndex, Option<BalanceOf<T>>),
+		/// 取消出售
+		KittyCancelSale(T::AccountId, T::KittyIndex),
 	}
 
 	// Errors inform users that something went wrong.
@@ -121,7 +122,8 @@ pub mod pallet {
 			};
 
 			// 扣除质押金额
-			T::Currency::reserve(&who, T::ReserveOfNewCreate::get()).map_err(|_| Error::<T>::NotEnoughBalance)?;
+			T::Currency::reserve(&who, T::ReserveOfNewCreate::get())
+				.map_err(|_| Error::<T>::NotEnoughBalance)?;
 
 			let dna = Self::random_value(&who);
 
@@ -211,7 +213,14 @@ pub mod pallet {
 
 			KittiesPrice::<T>::mutate_exists(kitty_id, |p| *p = Some(price));
 
-			Self::deposit_event(Event::KittyForSale(who, kitty_id, price));
+			match price {
+				Some(_) => {
+					Self::deposit_event(Event::KittyForSale(who, kitty_id, price));
+				}
+				None => {
+					Self::deposit_event(Event::KittyCancelSale(who, kitty_id));
+				}
+			}
 
 			Ok(())
 		}

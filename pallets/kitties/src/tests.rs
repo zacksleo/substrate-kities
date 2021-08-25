@@ -130,6 +130,7 @@ fn cancel_sell_test() {
 		assert_ok!(Kitties::sell(Origin::signed(1), 1, None));
 
 		assert_eq!(None, KittiesPrice::<Test>::get(1));
+		System::assert_has_event(TestEvent::Kitties(Event::KittyCancelSale(1, 1)));
 	});
 }
 
