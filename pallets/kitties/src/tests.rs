@@ -39,7 +39,7 @@ fn create_failed_with_not_enough_balance() {
 #[test]
 fn transfer_success() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Kitties::create(Origin::signed(1)));
+		let _ = Kitties::create(Origin::signed(1));
 		assert_ok!(Kitties::transfer(Origin::signed(1), 2, 1));
 		System::assert_has_event(TestEvent::Kitties(Event::KittyTransfered(1, 2, 1)));
 	});
@@ -56,8 +56,7 @@ fn transfer_fail_when_to_some_owner() {
 #[test]
 fn transfer_fail_not_owner() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Kitties::create(Origin::signed(1)));
-
+		let _ = Kitties::create(Origin::signed(1));
 		assert_noop!(Kitties::transfer(Origin::signed(2), 1, 1), Error::<Test>::NotOwnerOfKitty);
 	});
 }
