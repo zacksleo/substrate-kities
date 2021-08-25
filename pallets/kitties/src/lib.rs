@@ -26,6 +26,7 @@ pub mod pallet {
 	use sp_io::hashing::blake2_128;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, Bounded};
 
+	/// Kitty 的状态
 	#[derive(Encode, Decode)]
 	pub struct Kitty(pub [u8; 16]);
 
@@ -111,6 +112,9 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// 创建 Kitty
+		/// 创建时需要质押一定的金额: `T::ReserveOfNewCreate`
+		/// ### Arguments
+		/// * `origin` - 创建者
 		#[pallet::weight(0)]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -139,6 +143,11 @@ pub mod pallet {
 		}
 
 		/// 转让 Kitty
+		/// 转让者与接收者不能相同
+		/// ### Arguments
+		/// * `origin` - 转让者
+		/// * `to` - 接收者
+		/// * `kitty_id` - 转让的 Kitty 编号
 		#[pallet::weight(0)]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -158,6 +167,10 @@ pub mod pallet {
 
 		/// 生产 Kitty
 		/// 父母的编号不能相同
+		/// ### Arguments
+		/// * `origin` - 生产者
+		/// * `kitty_id_1` - 父亲的编号
+		/// * `kitty_id_2` - 母亲的编号
 		#[pallet::weight(0)]
 		pub fn breed(
 			origin: OriginFor<T>,
@@ -206,6 +219,10 @@ pub mod pallet {
 
 		/// 出售 Kitty
 		/// price 为 None 时, 表示取消出售
+		/// ### Arguments
+		/// * `origin` - 出售者
+		/// * `kitty_id` - 出售的 Kitty 编号
+		/// * `price` - 出售价格
 		#[pallet::weight(0)]
 		pub fn sell(
 			origin: OriginFor<T>,
@@ -230,6 +247,9 @@ pub mod pallet {
 		}
 
 		/// 购买 Kitty
+		/// ### Arguments
+		/// * `origin` - 购买者
+		/// * `kitty_id` - 购买的 Kitty 编号
 		#[pallet::weight(0)]
 		pub fn buy(origin: OriginFor<T>, kitty_id: T::KittyIndex) -> DispatchResult {
 			let buyer = ensure_signed(origin)?;
@@ -266,6 +286,8 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// 随机数生成
+		/// ### Arguments
+		/// * `who` - 生成随机数的人
 		fn random_value(who: &T::AccountId) -> [u8; 16] {
 			let payload =
 				(T::Randomness::random_seed(), &who, <frame_system::Pallet<T>>::extrinsic_index());
@@ -273,6 +295,10 @@ pub mod pallet {
 		}
 
 		/// 转移 Kitty
+		/// ### Arguments
+		/// * `owner` - 原来的主人
+		/// * `new_owner` - 新的主人
+		/// * `kitty_id` - 转移的 Kitty 编号
 		fn transfer_kitty(from: T::AccountId, to: T::AccountId, kitty_id: T::KittyIndex) {
 			Owner::<T>::insert(kitty_id, Some(to.clone()));
 			Self::deposit_event(Event::KittyTransfered(from, to, kitty_id));
